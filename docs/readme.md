@@ -50,9 +50,24 @@ $deamon
       pruneDays: 30,
     );
 
+    // proceed instantly without sleeping
     $deamon->run();
   });
 ```
+
+**Note:** The final `$deamon->run()` call is optional. By default, RockDeamon sleeps for the specified duration (1 second) between iterations. However, you can skip this delay when your task has work to do, which significantly improves performance for batch processing.
+
+**Example:** Processing 100 items would take at least 100 seconds with the default sleep behavior, but with immediate re-execution, it could complete in just a few seconds—depending on the processing time per item.
+
+**When to use `$deamon->run()`:**
+- ✅ When processing multiple items in sequence
+- ✅ When you want to continue immediately after completing work
+- ✅ For high-throughput batch operations
+
+**When to omit `$deamon->run()`:**
+- ✅ When you want to respect the sleep interval
+- ✅ For periodic monitoring tasks
+- ✅ When you need to reduce CPU usage
 
 ### 2. Set Up Cron Job
 
