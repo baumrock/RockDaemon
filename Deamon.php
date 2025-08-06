@@ -112,6 +112,9 @@ class Deamon extends WireData implements Module, ConfigurableModule
       pcntl_signal_dispatch();
     }
 
+    // uncache all pages to avoid stale data
+    wire()->pages->uncacheAll();
+
     // run the callback provided by the user
     if ($callback) $this->callback = $callback;
     if ($this->callback) call_user_func($this->callback, $this);
@@ -202,8 +205,8 @@ class Deamon extends WireData implements Module, ConfigurableModule
 
   public function log(
     string $message,
-    ?int $pruneDays = null,
     ?string $logname = null,
+    ?int $pruneDays = null,
     ?array $options = null,
   ): void {
     $logname = $logname ?? $this->logname;

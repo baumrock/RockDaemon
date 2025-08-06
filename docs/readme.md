@@ -1,27 +1,144 @@
 # RockDeamon
 
-## Concept
+A ProcessWire module for managing long-running background tasks (daemons) with automatic lifecycle management and monitoring.
 
-- add a simple deamon script
-- add a cronjob that runs every minute and makes sure the script is alive
+## Why RockDeamon?
 
-## WHY
+Running long-running tasks in PHP can be challenging:
+- Preventing multiple instances from running simultaneously
+- Manual restart capabilities
+- Automatic restart after deployments
+- Signal handling and graceful shutdown
+- Debug output control
+- Command-line argument parsing
+- Hosting environment compatibility
 
-all you want is a long running task
-there are several ways to do this, eg reactphp or a cronjob
-quickly you realise the problems
-- how to make sure that only one instance runs and that the cron does not fire up multiple instances?
-- how to restart the task manually?
-- how to restart the task after deployments?
-- quickly lots of boilerplate code
-- how to echo all output but only if -d debug flag?
-- how to read arguments php mytask.php -f foo.txt -d
-- setting up deamons can be tricky or not possible
-- adding cronjobs is easy in most hosting environments
-- you can quickly get caught in a task running and not being able to quit it
+RockDeamon solves these problems with a simple, cron-based approach.
+
+## Quick Start
+
+### 1. Create a Daemon Script
+
+```php
+<?php
+// pdf-daemon.php
+namespace ProcessWire;
+
+use RockDeamon\Deamon;
+
+require_once __DIR__ . '/public/index.php';
+
+$rockdeamon = wire()->modules->get('RockDeamon');
+$deamon = $rockdeamon->new('pdf-daemon');
+
+$deamon
+  ->run(function (Deamon $deamon) {
+    // get a newspaper page that has the "createPdf" checkbox enabled
+    $p = wire()->pages->get([
+      'template' => 'newspaper',
+      'createPdf' => 1,
+    ]);
+    if (!$p->id) return $deamon->echo('Nothing to do');
+
+    $timer = Debug::startTimer();
+    $p->createPdf();
+    $ms = Debug::stopTimer($timer) * 1000;
+
+    $deamon->log(
+      message: "created PDF for $p in {$ms}ms",
+      logname: "pdf-create",
+      pruneDays: 30,
+    );
+
+    $deamon->run();
+  });
+```
+
+### 2. Set Up Cron Job
+
+Refer to your hosting provider how to setup cronjobs. Set your cronjob to run every minute.
+
+## API Reference
+
+### Configuration Methods
+
+| Method | Description | Default |
+|--------|-------------|---------|
+| `setPruneDays(int $days)` | Set log retention period | 1 day |
+| `setLogname(string $name, ?int $pruneDays)` | Set custom log name | Uses daemon ID |
+| `setSleep(int $seconds)` | Sleep duration between iterations | 1 second |
+| `shutdownAfter(int $seconds)` | Auto-shutdown after duration | 1 hour - 10 seconds |
+| `debug(bool $debug)` | Enable/disable debug output | false |
+
+### Running the Daemon
+
+```php
+$deamon->run(callable $callback);
+```
+
+The callback receives the daemon instance as parameter and runs in an infinite loop until shutdown.
+
+### Logging
+
+```php
+$deamon->log(
+  string $message,
+  ?string $logname = null,
+  ?int $pruneDays = null,
+  ?array $options = null
+);
+```
+
+### Debug Output
+
+```php
+$deamon->echo(string $message);
+```
+
+The echo method will write the message directly to your console when debug mode is enabled and you started your script via CLI.
+
+## Command Line Usage
+
+### Debug Mode
+
+Run with `-d` flag to enable debug output:
+
+```bash
+php pdf-daemon.php -d
+```
+
+### Force Shutdown
+
+When using automated deployments you might want to force a restart of your deamons after a successful deployment:
+
+```php
+$rockdeamon = wire()->modules->get('RockDeamon');
+
+// Shutdown specific daemon
+$rockdeamon->forceShutdown('pdf-daemon');
+
+// Shutdown all daemons
+$rockdeamon->forceShutdown();
+```
+
+## Module Configuration
+
+The module provides a configuration screen showing all running daemons with the ability to force shutdown individual instances.
+
+<img src=https://i.imgur.com/wba7qIB.png class=blur>
 
 ## Features
 
-- easy monitoring from the console with -d debug flag
-- overview of running tasks on the module config page
-- possible to stop tasks from there
+- **Single Instance**: Prevents multiple instances of the same daemon
+- **Auto-shutdown**: Configurable maximum runtime (default: 1 hour - 10 seconds)
+- **Signal Handling**: Graceful shutdown on SIGINT/SIGTERM
+- **Logging**: Built-in logging with automatic pruning
+- **Debug Mode**: Controlled output with `-d` flag
+- **Monitoring**: Web interface to view and manage running daemons
+- **Cron-friendly**: Designed to work with standard cron jobs
+
+## Requirements
+
+- PHP >= 8.1
+- ProcessWire 3.x
+- Cron access (for production use)
