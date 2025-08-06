@@ -6,6 +6,8 @@ use ProcessWire\WireData;
 use ProcessWire\Module;
 use ProcessWire\ConfigurableModule;
 
+use function ProcessWire\wire;
+
 /**
  * @author Bernhard Baumrock, 06.08.2025
  * @license Licensed under MIT
@@ -18,6 +20,8 @@ class Deamon extends WireData implements Module, ConfigurableModule
   const ONEHOUR = 60 * self::ONEMINUTE;
   const ONEDAY = 24 * self::ONEHOUR;
 
+  private string $id;
+  private string $cacheKey;
   private ?string $logname = null;
   private int $pruneDays = 1;
   private array $logOptions = [];
@@ -40,16 +44,28 @@ class Deamon extends WireData implements Module, ConfigurableModule
    */
   private int $shutdownAfter = 0;
 
-  public function __construct($logName = null, ?array $logOptions = null)
-  {
+  public function __construct(
+    string $id,
+    ?string $logName = null,
+    ?array $logOptions = null
+  ) {
     parent::__construct();
-    $this->setLogname($logName);
+
+    // debug mode?
+    $argv = $_SERVER['argv'];
+    if (in_array('-d', $argv)) $this->debug(true);
+
+    $this->id = $id;
+    $this->cacheKey = "rockdeamon-running-$id";
+
+    $this->setLogname($logName ?? $id);
     $this->logOptions = $logOptions ?? [
       'showURL' => false,
       'showUser' => false,
     ];
-    $argv = $_SERVER['argv'];
-    if (in_array('-d', $argv)) $this->debug(true);
+    $this->checkRunning();
+
+    $this->log("id=$id");
     $this->shutdownAfter(self::ONEHOUR - 10);
     $this->addShutdownHandler();
   }
@@ -73,17 +89,21 @@ class Deamon extends WireData implements Module, ConfigurableModule
   public function run(?callable $callback = null): void
   {
     $duration = 0;
-    if (!$this->started) {
-      $this->echo("----------");
-      $this->log("started");
-      $this->started = time();
-    } else {
+    if (!$this->started) $this->start();
+    else {
       $duration = $this->getSecondsRunning();
       $this->echo("running for $duration seconds");
     }
 
+    // running flag removed? then shutdown
+    if (!wire()->cache->get($this->cacheKey)) {
+      $this->log("running flag removed");
+      $this->shutdown();
+    }
+
+    // max duration reached?
     if ($duration >= $this->shutdownAfter) {
-      $this->log("shutdown after {$this->shutdownAfter} seconds");
+      $this->log("max duration reached ({$this->shutdownAfter} seconds)");
       $this->shutdown();
     }
 
@@ -97,7 +117,7 @@ class Deamon extends WireData implements Module, ConfigurableModule
     if ($this->callback) call_user_func($this->callback, $this);
 
     // sleep for the configured amount of seconds and run next iteration
-    $this->echo("sleeping for {$this->sleep} seconds");
+    if ($this->sleep > 1) $this->echo("sleeping for {$this->sleep} seconds");
     sleep($this->sleep);
     $this->run($callback);
   }
@@ -156,6 +176,16 @@ class Deamon extends WireData implements Module, ConfigurableModule
     }
   }
 
+  private function checkRunning(): void
+  {
+    $running = wire()->cache->get($this->cacheKey);
+    if ($running) {
+      $this->log("deamon {$this->id} is already running");
+      exit;
+    }
+    wire()->cache->save($this->cacheKey, true);
+  }
+
   /**
    * Config inputfields
    * @param InputfieldWrapper $inputfields
@@ -191,7 +221,15 @@ class Deamon extends WireData implements Module, ConfigurableModule
   {
     if ($this->shutdown) return;
     $this->shutdown = true;
+    wire()->cache->delete($this->cacheKey);
     $this->log('shutdown');
     exit;
+  }
+
+  private function start(): void
+  {
+    $this->echo("----------");
+    $this->log("started");
+    $this->started = time();
   }
 }
