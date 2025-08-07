@@ -1,8 +1,8 @@
-# RockDeamon
+# RockDaemon
 
 A ProcessWire module for managing long-running background tasks (daemons) with automatic lifecycle management and monitoring.
 
-## Why RockDeamon?
+## Why RockDaemon?
 
 Running long-running tasks in PHP can be challenging:
 - Preventing multiple instances from running simultaneously
@@ -13,7 +13,7 @@ Running long-running tasks in PHP can be challenging:
 - Command-line argument parsing
 - Hosting environment compatibility
 
-RockDeamon solves these problems with a simple, cron-based approach.
+RockDaemon solves these problems with a simple, cron-based approach.
 
 ## Quick Start
 
@@ -24,47 +24,47 @@ RockDeamon solves these problems with a simple, cron-based approach.
 // pdf-daemon.php
 namespace ProcessWire;
 
-use RockDeamon\Deamon;
+use RockDaemon\Daemon;
 
 require_once __DIR__ . '/public/index.php';
 
-$rockdeamon = wire()->modules->get('RockDeamon');
-$deamon = $rockdeamon->new('pdf-daemon');
+$rockdaemon = wire()->modules->get('RockDaemon');
+$daemon = $rockdaemon->new('pdf-daemon');
 
-$deamon
-  ->run(function (Deamon $deamon) {
+$daemon
+  ->run(function (Daemon $daemon) {
     // get a newspaper page that has the "createPdf" checkbox enabled
     $p = wire()->pages->get([
       'template' => 'newspaper',
       'createPdf' => 1,
     ]);
-    if (!$p->id) return $deamon->echo('Nothing to do');
+    if (!$p->id) return $daemon->echo('Nothing to do');
 
     $timer = Debug::startTimer();
     $p->createPdf();
     $ms = Debug::stopTimer($timer) * 1000;
 
-    $deamon->log(
+    $daemon->log(
       message: "created PDF for $p in {$ms}ms",
       logname: "pdf-create",
       pruneDays: 30,
     );
 
     // proceed instantly without sleeping
-    $deamon->run();
+    $daemon->run();
   });
 ```
 
-**Note:** The final `$deamon->run()` call is optional. By default, RockDeamon sleeps for the specified duration (1 second) between iterations. However, you can skip this delay when your task has work to do, which significantly improves performance for batch processing.
+**Note:** The final `$daemon->run()` call is optional. By default, RockDaemon sleeps for the specified duration (1 second) between iterations. However, you can skip this delay when your task has work to do, which significantly improves performance for batch processing.
 
 **Example:** Processing 100 items would take at least 100 seconds with the default sleep behavior, but with immediate re-execution, it could complete in just a few seconds—depending on the processing time per item.
 
-**When to use `$deamon->run()`:**
+**When to use `$daemon->run()`:**
 - When processing multiple items in sequence
 - When you want to continue immediately after completing work
 - For high-throughput batch operations
 
-**When to omit `$deamon->run()`:**
+**When to omit `$daemon->run()`:**
 - When you want to respect the sleep interval
 - For periodic monitoring tasks
 - When you need to reduce CPU usage
@@ -88,7 +88,7 @@ Refer to your hosting provider how to setup cronjobs. Set your cronjob to run ev
 ### Running the Daemon
 
 ```php
-$deamon->run(callable $callback);
+$daemon->run(callable $callback);
 ```
 
 The callback receives the daemon instance as parameter and runs in an infinite loop until shutdown.
@@ -96,7 +96,7 @@ The callback receives the daemon instance as parameter and runs in an infinite l
 ### Logging
 
 ```php
-$deamon->log(
+$daemon->log(
   string $message,
   ?string $logname = null,
   ?int $pruneDays = null,
@@ -107,7 +107,7 @@ $deamon->log(
 ### Debug Output
 
 ```php
-$deamon->echo(string $message);
+$daemon->echo(string $message);
 ```
 
 The echo method will write the message directly to your console when debug mode is enabled and you started your script via CLI.
@@ -124,16 +124,16 @@ php pdf-daemon.php -d
 
 ### Force Shutdown
 
-When using automated deployments you might want to force a restart of your deamons after a successful deployment:
+When using automated deployments you might want to force a restart of your daemons after a successful deployment:
 
 ```php
-$rockdeamon = wire()->modules->get('RockDeamon');
+$rockdaemon = wire()->modules->get('RockDaemon');
 
 // Shutdown specific daemon
-$rockdeamon->forceShutdown('pdf-daemon');
+$rockdaemon->forceShutdown('pdf-daemon');
 
 // Shutdown all daemons
-$rockdeamon->forceShutdown();
+$rockdaemon->forceShutdown();
 ```
 
 ## Module Configuration

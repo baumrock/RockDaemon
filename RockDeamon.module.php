@@ -2,11 +2,11 @@
 
 namespace ProcessWire;
 
-use RockDeamon\Deamon;
+use RockDaemon\Daemon;
 
-function rockdeamon(): Deamon
+function rockdaemon(): Daemon
 {
-  return wire()->modules->get('RockDeamon');
+  return wire()->modules->get('RockDaemon');
 }
 
 /**
@@ -14,33 +14,33 @@ function rockdeamon(): Deamon
  * @license Licensed under MIT
  * @link https://www.baumrock.com
  */
-class RockDeamon extends WireData implements Module, ConfigurableModule
+class RockDaemon extends WireData implements Module, ConfigurableModule
 {
   public function new(
     string $id,
     ?string $logName = null,
     ?array $logOptions = null,
-  ): Deamon {
-    require_once __DIR__ . '/Deamon.php';
-    return new Deamon($id, $logName, $logOptions);
+  ): Daemon {
+    require_once __DIR__ . '/Daemon.php';
+    return new Daemon($id, $logName, $logOptions);
   }
 
   /**
-   * Mark one or all deamons to be shutdown
+   * Mark one or all daemons to be shutdown
    *
    * Usage:
-   * $modules->get('RockDeamon')->forceShutdown();
-   * $modules->get('RockDeamon')->forceShutdown('my-deamon');
+   * $modules->get('RockDaemon')->forceShutdown();
+   * $modules->get('RockDaemon')->forceShutdown('my-daemon');
    */
   public function forceShutdown(?string $id = null): void
   {
-    if ($id) wire()->cache->delete("rockdeamon-running-$id");
-    else wire()->cache->delete('rockdeamon-running-*');
+    if ($id) wire()->cache->delete("rockdaemon-running-$id");
+    else wire()->cache->delete('rockdaemon-running-*');
   }
 
   public function getModuleConfigInputfields($inputfields)
   {
-    $deamons = wire()->cache->get('rockdeamon-running-*');
+    $daemons = wire()->cache->get('rockdaemon-running-*');
     $shutdown = wire()->input->post->array('forceShutdown');
     foreach ($shutdown as $id) {
       $this->forceShutdown($id);
@@ -49,11 +49,11 @@ class RockDeamon extends WireData implements Module, ConfigurableModule
     $f = new InputfieldCheckboxes();
     $f->name = 'forceShutdown';
     $f->label = 'Force shutdown';
-    foreach ($deamons as $k => $deamon) {
-      $deamon = str_replace('rockdeamon-running-', '', $k);
-      $f->addOption($deamon, $deamon);
+    foreach ($daemons as $k => $daemon) {
+      $daemon = str_replace('rockdaemon-running-', '', $k);
+      $f->addOption($daemon, $daemon);
     }
-    if (!count($deamons)) $f->notes = 'No deamons are currently running';
+    if (!count($daemons)) $f->notes = 'No daemons are currently running';
     $inputfields->add($f);
 
     return $inputfields;

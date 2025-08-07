@@ -1,3 +1,3 @@
-# RockDeamon
+# RockDaemon
 
-Please see baumrock.com/RockDeamon or check out the docs folder.
+Please see baumrock.com/RockDaemon or check out the docs folder.

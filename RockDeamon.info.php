@@ -3,7 +3,7 @@
 namespace ProcessWire;
 
 $info = [
-  'title' => 'RockDeamon',
+  'title' => 'RockDaemon',
   'version' => json_decode(file_get_contents(__DIR__ . "/package.json"))->version,
   'summary' => '',
   'autoload' => false,

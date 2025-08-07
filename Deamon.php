@@ -1,6 +1,6 @@
 <?php
 
-namespace RockDeamon;
+namespace RockDaemon;
 
 use ProcessWire\WireData;
 use ProcessWire\Module;
@@ -13,7 +13,7 @@ use function ProcessWire\wire;
  * @license Licensed under MIT
  * @link https://www.baumrock.com
  */
-class Deamon extends WireData implements Module, ConfigurableModule
+class Daemon extends WireData implements Module, ConfigurableModule
 {
   const ONESECOND = 1;
   const ONEMINUTE = 60 * self::ONESECOND;
@@ -56,7 +56,7 @@ class Deamon extends WireData implements Module, ConfigurableModule
     if (in_array('-d', $argv)) $this->debug(true);
 
     $this->id = $id;
-    $this->cacheKey = "rockdeamon-running-$id";
+    $this->cacheKey = "rockdaemon-running-$id";
 
     $this->setLogname($logName ?? $id);
     $this->logOptions = $logOptions ?? [
@@ -183,7 +183,7 @@ class Deamon extends WireData implements Module, ConfigurableModule
   {
     $running = wire()->cache->get($this->cacheKey);
     if ($running) {
-      $this->log("deamon {$this->id} is already running");
+      $this->log("daemon {$this->id} is already running");
       exit;
     }
     wire()->cache->save($this->cacheKey, true);
