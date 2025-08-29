@@ -38,7 +38,7 @@ class Daemon extends WireData implements Module, ConfigurableModule
 
   /**
    * How long to run before shutting down
-   * By default we shutdown after 1 hour - 10 seconds
+   * By default we shutdown after 1 hour minus 10 seconds
    * so that we only have to wait 10 seconds for the next cron to start up
    * @var int
    */
