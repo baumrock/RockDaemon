@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/baumrock/RockDaemon/compare/v1.0.1...v1.0.2) (2025-09-01)
+
+
+### Bug Fixes
+
+* rename files ([52a1daf](https://github.com/baumrock/RockDaemon/commit/52a1daf4de9a97831803144b280202dee0b04e39))
+
 ## [1.0.1](https://github.com/baumrock/RockDaemon/compare/v1.0.0...v1.0.1) (2025-08-07)
 
 
