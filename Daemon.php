@@ -5,6 +5,7 @@ namespace RockDaemon;
 use ProcessWire\WireData;
 use ProcessWire\Module;
 use ProcessWire\ConfigurableModule;
+use ProcessWire\User;
 
 use function ProcessWire\wire;
 
@@ -234,5 +235,12 @@ class Daemon extends WireData implements Module, ConfigurableModule
     $this->echo("----------");
     $this->log("started");
     $this->started = time();
+  }
+
+  public function sudo(): void
+  {
+    $su = new User();
+    $su->addRole("superuser");
+    wire()->users->setCurrentUser($su);
   }
 }
